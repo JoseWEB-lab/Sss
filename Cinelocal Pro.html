@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>CineLocal Pro — Tu Biblioteca Libre con Voz y Traductor</title>
+  <style>
+    :root {
+      --bg-color: #141414;
+      --text-color: #ffffff;
+      --magenta: #e015ff;
+      --card-bg: #222222;
+      --hover-scale: 1.05;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+      touch-action: pan-y;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* --- HEADER --- */
+    header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.8);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+    }
+
+    .logo-container {
+      height: 36px;
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* --- MENÚ LATERAL --- */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 280px;
+      height: 100vh;
+      background: #1a1a1a;
+      z-index: 999;
+      transition: var(--transition);
+      padding: 60px 20px 20px;
+      box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .sidebar ul {
+      list-style: none;
+    }
+
+    .sidebar li {
+      margin: 15px 0;
+    }
+
+    .sidebar a {
+      color: #ddd;
+      text-decoration: none;
+      font-size: 1.1rem;
+      padding: 10px 15px;
+      display: block;
+      border-radius: 8px;
+      transition: var(--transition);
+    }
+
+    .sidebar a:hover, .sidebar a.active {
+      background: var(--magenta);
+      color: #000;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 998;
+      display: none;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    /* --- CONTENIDO PRINCIPAL --- */
+    .container {
+      padding: 20px;
+      padding-top: 80px;
+      min-height: 100vh;
+    }
+
+    /* --- BARRA DE BÚSQUEDA --- */
+    .search-bar {
+      width: 100%;
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 12px 20px;
+      background: #333;
+      border: 2px solid var(--magenta);
+      border-radius: 50px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-bar:focus {
+      background: #444;
+      box-shadow: 0 0 15px rgba(224, 21, 255, 0.5);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin: 30px 0 20px;
+      color: var(--magenta);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 24px;
+      background: var(--magenta);
+      margin-right: 10px;
+      border-radius: 4px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: var(--transition);
+      position: relative;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .card:hover, .card:active {
+      transform: scale(var(--hover-scale));
+      box-shadow: 0 0 20px rgba(224, 21, 255, 0.4);
+    }
+
+    .card img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      display: block;
+      border-bottom: 2px solid transparent;
+    }
+
+    .card:hover img {
+      border-bottom: 2px solid var(--magenta);
+    }
+
+    .card-title {
+      padding: 10px;
+      font-size: 0.9rem;
+      text-align: center;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: var(--magenta);
+      border-radius: 0 0 0 4px;
+      transition: width 0.3s ease;
+    }
+
+    .favorite-btn, .continue-btn, .voice-btn, .translate-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: #ddd;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      touch-action: manipulation;
+    }
+
+    .favorite-btn.favorited, .continue-btn, .voice-btn.active, .translate-btn.active {
+      color: var(--magenta);
+      background: rgba(224, 21, 255, 0.3);
+    }
+
+    .continue-btn { top: 48px; font-size: 0.8rem; }
+    .voice-btn { top: 88px; }
+    .translate-btn { top: 128px; }
+
+    /* --- REPRODUCTOR DE VIDEO --- */
+    .video-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 2000;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .video-modal.active {
+      display: flex;
+    }
+
+    .video-container {
+      width: 100%;
+      max-width: 1000px;
+      aspect-ratio: 16/9;
+      position: relative;
+    }
+
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      outline: none;
+    }
+
+    .video-controls {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      right: 15px;
+      display: flex;
+      gap: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .video-container:hover .video-controls {
+      opacity: 1;
+    }
+
+    .control-btn {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .control-btn.active {
+      background: var(--magenta);
+      color: #000;
+    }
+
+    .close-video-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .video-title {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    /* --- ORIENTACIÓN --- */
+    body:not(.video-playing) {
+      height: 100vh;
+      width: 100vw;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    body.video-playing {
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    body.video-playing .container,
+    body.video-playing header,
+    body.video-playing .sidebar {
+      display: none;
+    }
+
+    /* --- FOOTER --- */
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+      font-size: 0.9rem;
+      position: relative;
+      z-index: 50;
+    }
+
+    /* --- SCROLL TOP --- */
+    .scroll-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 50px;
+      height: 50px;
+      background: var(--magenta);
+      color: #000;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      z-index: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scroll-top.show {
+      display: flex;
+    }
+
+    /* --- TOAST --- */
+    #toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--magenta);
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-weight: bold;
+      z-index: 3000;
+      box-shadow: 0 4px 15px rgba(224, 21, 255, 0.5);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    /* --- ADVERTENCIA ORIENTACIÓN --- */
+    @media (orientation: landscape) {
+      body:not(.video-playing):after {
+        content: "📱 Gira tu dispositivo a vertical";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.85);
+        padding: 20px 40px;
+        border-radius: 12px;
+        z-index: 5000;
+        font-size: 1.2rem;
+        color: var(--magenta);
+        text-align: center;
+        font-weight: bold;
+        pointer-events: none;
+        box-shadow: 0 0 30px rgba(224, 21, 255, 0.5);
+        backdrop-filter: blur(5px);
+      }
+    }
+
+    /* --- FILTROS --- */
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: #333;
+      border: 1px solid #555;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--magenta);
+      color: #000;
+      border-color: var(--magenta);
+    }
+
+    /* --- LOADING --- */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2rem;
+      color: var(--magenta);
+    }
+
+    /* --- MODAL TRADUCTOR --- */
+    .translate-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: #222;
+      padding: 20px;
+      border-radius: 15px;
+      z-index: 3000;
+      width: 90%;
+      max-width: 400px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .translate-modal.active {
+      opacity: 1;
+      pointer-events: all;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .modal-title {
+      color: var(--magenta);
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #333;
+      color: white;
+    }
+
+    /* --- AUDIO DESCRIPTIVO --- */
+    .audio-descriptivo {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      z-index: 4000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .audio-descriptivo.active {
+      opacity: 1;
+    }
+
+    /* --- ANIMACIONES --- */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-container">
+      <canvas id="logoCanvas" width="200" height="40"></canvas>
+    </div>
+    <button class="menu-btn" id="menuBtn">☰</button>
+  </header>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="sidebar" id="sidebar">
+    <ul>
+      <li><a href="#inicio" class="nav-link active">Inicio</a></li>
+      <li><a href="#peliculas" class="nav-link">Películas (20)</a></li>
+      <li><a href="#series" class="nav-link">Series (20)</a></li>
+      <li><a href="#animaciones" class="nav-link">Animaciones (20)</a></li>
+      <li><a href="#favoritos" class="nav-link">Favoritos</a></li>
+      <li><a href="#historial" class="nav-link">Historial</a></li>
+      <li><a href="#descargadas" class="nav-link">Descargadas</a></li>
+      <li><a href="#configuracion" class="nav-link">Configuración</a></li>
+    </ul>
+  </div>
+
+  <div class="container" id="mainContainer">
+    <div class="loading" id="loading">Cargando biblioteca libre... ★</div>
+
+    <input type="text" class="search-bar" id="searchBar" placeholder="Buscar películas, series o animaciones..." />
+
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="peliculas">Películas</button>
+      <button class="filter-btn" data-filter="series">Series</button>
+      <button class="filter-btn" data-filter="animaciones">Animaciones</button>
+    </div>
+
+    <h2 class="section-title" id="peliculas">🎬 Películas Públicas</h2>
+    <div class="content-grid" id="peliculasGrid"></div>
+
+    <h2 class="section-title" id="series">📺 Series Educativas</h2>
+    <div class="content-grid" id="seriesGrid"></div>
+
+    <h2 class="section-title" id="animaciones">🌀 Animaciones Libres</h2>
+    <div class="content-grid" id="animacionesGrid"></div>
+
+    <h2 class="section-title" id="favoritos">❤️ Tus Favoritos</h2>
+    <div class="content-grid" id="favoritosGrid"></div>
+
+    <h2 class="section-title" id="historial">⏳ Historial de Reproducción</h2>
+    <div class="content-grid" id="historialGrid"></div>
+
+    <h2 class="section-title" id="descargadas">📥 Descargadas (Offline)</h2>
+    <div class="content-grid" id="descargadasGrid">
+      <p style="grid-column:1/-1; text-align:center; padding:20px; color:#777">Guarda contenido para ver sin internet</p>
+    </div>
+  </div>
+
+  <!-- REPRODUCTOR -->
+  <div class="video-modal" id="videoModal">
+    <div class="video-container">
+      <video id="videoPlayer" controls playsinline></video>
+      <div class="video-title" id="videoTitle"></div>
+      <div class="video-controls">
+        <button class="control-btn" id="speedBtn">1x</button>
+        <button class="control-btn" id="qualityBtn">720p</button>
+        <button class="control-btn" id="audioDescBtn">Audio Descriptivo</button>
+        <button class="control-btn" id="subtitleBtn">Subtítulos</button>
+        <button class="control-btn" id="translateVideoBtn">Traducir Audio</button>
+      </div>
+      <button class="close-video-btn" id="closeVideoBtn">✕</button>
+    </div>
+  </div>
+
+  <!-- MODAL TRADUCTOR -->
+  <div class="translate-modal" id="translateModal">
+    <h3 class="modal-title">Traducir Contenido</h3>
+    <select id="fromLang">
+      <option value="auto">Detectar idioma</option>
+      <option value="en">Inglés</option>
+      <option value="es">Español</option>
+      <option value="fr">Francés</option>
+      <option value="de">Alemán</option>
+      <option value="pt">Portugués</option>
+      <option value="it">Italiano</option>
+      <option value="zh">Chino</option>
+      <option value="ar">Árabe</option>
+      <option value="ru">Ruso</option>
+      <option value="ja">Japonés</option>
+    </select>
+    <select id="toLang">
+      <option value="es">Español</option>
+      <option value="en">Inglés</option>
+      <option value="fr">Francés</option>
+      <option value="de">Alemán</option>
+      <option value="pt">Portugués</option>
+      <option value="it">Italiano</option>
+      <option value="zh">Chino</option>
+      <option value="ar">Árabe</option>
+      <option value="ru">Ruso</option>
+      <option value="ja">Japonés</option>
+    </select>
+    <button id="applyTranslate">Aplicar Traducción</button>
+    <button id="closeTranslate" style="background:#555">Cancelar</button>
+  </div>
+
+  <!-- AUDIO DESCRIPTIVO -->
+  <div class="audio-descriptivo" id="audioDescriptivo"></div>
+
+  <footer>
+    CineLocal Pro — 60+ contenidos sin copyright. Voz, traductor, accesibilidad.
+  </footer>
+
+  <button class="scroll-top" id="scrollTopBtn">↑</button>
+  <div id="toast"></div>
+
+  <script>
+    // 🎨 LOGO CON CANVAS (Animado)
+    function drawLogo() {
+      const canvas = document.getElementById('logoCanvas');
+      const ctx = canvas.getContext('2d');
+      const text = "CineLocal Pro";
+      let stars = [];
+
+      for (let i = 0; i < 8; i++) {
+        stars.push({
+          x: 10 + i * 25,
+          y: 8,
+          size: 4 + Math.random() * 3,
+          speed: 0.02 + Math.random() * 0.03
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Texto con gradiente
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        gradient.addColorStop(0, "#e015ff");
+        gradient.addColorStop(1, "#ff4dff");
+        ctx.font = "bold 20px Segoe UI";
+        ctx.fillStyle = gradient;
+        ctx.fillText(text, 5, 26);
+
+        // Estrellas parpadeantes
+        stars.forEach((star, i) => {
+          const opacity = 0.5 + Math.sin(Date.now() * star.speed + i) * 0.5;
+          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+          ctx.fillRect(star.x, star.y, star.size, star.size);
+        });
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+
+    // 🎬 CONTENIDO SIN COPYRIGHT — 20 en cada categoría
+    const peliculas = [
+      { id: 1, title: "Night of the Living Dead", img: "https://ia801408.us.archive.org/1/items/NightOfTheLivingDead1968/NightOfTheLivingDead1968.png", src: "https://archive.org/download/NightOfTheLivingDead1968/Night_of_the_Living_Dead_1968_720p.mp4", voice: "Una película de terror sobre zombies que atacan una casa aislada.", lang: "en" },
+      { id: 2, title: "Santa Claus (1898)", img: "https://ia800302.us.archive.org/23/items/santa_claus_1898/santa_claus_1898.png", src: "https://archive.org/download/santa_claus_1898/santa_claus_1898_512kb.mp4", voice: "La primera película sobre Santa Claus, muda y mágica.", lang: "en" },
+      { id: 3, title: "The General (1926)", img: "https://ia800704.us.archive.org/2/items/TheGeneral1926BusterKeaton/TheGeneral1926BusterKeaton.png", src: "https://archive.org/download/TheGeneral1926BusterKeaton/TheGeneral.mp4", voice: "Comedia muda épica de Buster Keaton durante la Guerra Civil.", lang: "en" },
+      { id: 4, title: "A Trip to the Moon", img: "https://ia802707.us.archive.org/12/items/A_Trip_to_the_Moon_1902/A_Trip_to_the_Moon_1902.png", src: "https://archive.org/download/A_Trip_to_the_Moon_1902/ATripToTheMoon1902.mp4", voice: "Primera película de ciencia ficción, con viaje a la luna.", lang: "fr" },
+      { id: 5, title: "Metropolis (1927)", img: "https://ia800701.us.archive.org/20/items/metropolis_201608/metropolis.png", src: "https://archive.org/download/metropolis_201608/Metropolis1927.mp4", voice: "Ciudad futurista dividida entre ricos y trabajadores.", lang: "de" },
+      { id: 6, title: "Nosferatu (1922)", img: "https://ia800603.us.archive.org/13/items/Nosferatu1922B/Nosferatu1922B.png", src: "https://archive.org/download/Nosferatu1922B/Nosferatu.mp4", voice: "Versión no autorizada de Drácula, con atmósfera gótica.", lang: "de" },
+      { id: 7, title: "The Cabinet of Dr. Caligari", img: "https://ia802600.us.archive.org/23/items/TheCabinetOfDr.Caligari/TheCabinetOfDr.Caligari.png", src: "https://archive.org/download/TheCabinetOfDr.Caligari/TheCabinetOfDrCaligari.mp4", voice: "Obra maestra del expresionismo alemán.", lang: "de" },
+      { id: 8, title: "Sherlock Jr. (1924)", img: "https://ia801305.us.archive.org/21/items/SherlockJr/SherlockJr.png", src: "https://archive.org/download/SherlockJr/SherlockJr.mp4", voice: "Buster Keaton como proyeccionista que entra en la película.", lang: "en" },
+      { id: 9, title: "Safety Last! (1923)", img: "https://ia801600.us.archive.org/3/items/SafetyLast/SafetyLast.png", src: "https://archive.org/download/SafetyLast/SafetyLast.mp4", voice: "Famosa escena colgando de un reloj en un rascacielos.", lang: "en" },
+      { id: 10, title: "The Kid (1921)", img: "https://ia800503.us.archive.org/13/items/TheKidChaplin/TheKidChaplin.png", src: "https://archive.org/download/TheKidChaplin/TheKid.mp4", voice: "Chaplin cuida de un niño abandonado en una tierna comedia.", lang: "en" },
+      { id: 11, title: "Battleship Potemkin", img: "https://ia800605.us.archive.org/20/items/BattleshipPotemkin/BattleshipPotemkin.png", src: "https://archive.org/download/BattleshipPotemkin/BattleshipPotemkin.mp4", voice: "Sublevación en un acorazado ruso, con la escalera de Odessa.", lang: "ru" },
+      { id: 12, title: "The Gold Rush (1925)", img: "https://ia801301.us.archive.org/31/items/TheGoldRush1925/TheGoldRush1925.png", src: "https://archive.org/download/TheGoldRush1925/TheGoldRush.mp4", voice: "Chaplin en la fiebre del oro, con escena del zapato comestible.", lang: "en" },
+      { id: 13, title: "Faust (1926)", img: "https://ia802704.us.archive.org/30/items/Faust1926/Faust1926.png", src: "https://archive.org/download/Faust1926/Faust1926.mp4", voice: "Fausto vende su alma al diablo en esta obra gótica.", lang: "de" },
+      { id: 14, title: "The Phantom of the Opera", img: "https://ia800200.us.archive.org/25/items/ThePhantomOfTheOpera_520/ThePhantomOfTheOpera_520.png", src: "https://archive.org/download/ThePhantomOfTheOpera_520/ThePhantomOfTheOpera.mp4", voice: "El fantasma aterroriza la ópera de París.", lang: "en" },
+      { id: 15, title: "Wings (1927)", img: "https://ia801607.us.archive.org/17/items/Wings/Wings.png", src: "https://archive.org/download/Wings/Wings.mp4", voice: "Primera película en ganar el Óscar, sobre pilotos de la WWI.", lang: "en" },
+      { id: 16, title: "The Passion of Joan of Arc", img: "https://ia802608.us.archive.org/3/items/ThePassionOfJoanOfArc/ThePassionOfJoanOfArc.png", src: "https://archive.org/download/ThePassionOfJoanOfArc/ThePassionOfJoanOfArc.mp4", voice: "Juana de Arco enfrenta su juicio con intensidad dramática.", lang: "fr" },
+      { id: 17, title: "Steamboat Willie (1928)", img: "https://ia800103.us.archive.org/17/items/SteamboatWillie/SteamboatWillie.png", src: "https://archive.org/download/SteamboatWillie/SteamboatWillie.mp4", voice: "Primera aparición de Mickey Mouse con sonido sincronizado.", lang: "en" },
+      { id: 18, title: "Häxan (1922)", img: "https://ia802308.us.archive.org/33/items/HaxanWitchcraftThroughTheAges/HaxanWitchcraftThroughTheAges.png", src: "https://archive.org/download/HaxanWitchcraftThroughTheAges/Haxan.mp4", voice: "Documental sobre brujería a través de los siglos.", lang: "sv" },
+      { id: 19, title: "The Thief of Bagdad", img: "https://ia801302.us.archive.org/28/items/TheThiefOfBagdad/TheThiefOfBagdad.png", src: "https://archive.org/download/TheThiefOfBagdad/TheThiefOfBagdad.mp4", voice: "Aventuras mágicas en Bagdad con efectos pioneros.", lang: "en" },
+      { id: 20, title: "The Lost World (1925)", img: "https://ia800604.us.archive.org/25/items/TheLostWorld_292/TheLostWorld_292.png", src: "https://archive.org/download/TheLostWorld_292/TheLostWorld.mp4", voice: "Expedición a una meseta con dinosaurios vivos.", lang: "en" }
+    ];
+
+    const series = [
+      { id: 21, title: "The Mechanical Universe EP1", img: "https://ia804703.us.archive.org/33/items/mechanical-universe-01/mechanical-universe-01.png", src: "https://archive.org/download/mechanical-universe-01/mechanical_universe_01_512kb.mp4", voice: "Introducción a la física con animaciones y explicaciones claras.", lang: "en" },
+      { id: 22, title: "Planet Earth EP1", img: "https://ia801300.us.archive.org/3/items/PlanetEarth/PlanetEarth.png", src: "https://archive.org/download/PlanetEarth/PlanetEarth_ep1_512kb.mp4", voice: "Exploración de los polos y sus ecosistemas extremos.", lang: "en" },
+      { id: 23, title: "Cosmos EP1", img: "https://ia802701.us.archive.org/14/items/CosmosS01E01/CosmosS01E01.png", src: "https://archive.org/download/CosmosS01E01/CosmosS01E01.mp4", voice: "Carl Sagan nos lleva en un viaje por el universo.", lang: "en" },
+      { id: 24, title: "The Joy of Painting S01E01", img: "https://ia801304.us.archive.org/18/items/TheJoyOfPaintingS01/TheJoyOfPaintingS01.png", src: "https://archive.org/download/TheJoyOfPaintingS01/TheJoyOfPaintingS01E01.mp4", voice: "Bob Ross pinta un hermoso paisaje montañoso con nubes felices.", lang: "en" },
+      { id: 25, title: "Connections S01E01", img: "https://ia801504.us.archive.org/22/items/ConnectionsS01/ConnectionsS01.png", src: "https://archive.org/download/ConnectionsS01/ConnectionsS01E01.mp4", voice: "Cómo los inventos están conectados de formas inesperadas.", lang: "en" },
+      { id: 26, title: "The Ascent of Man EP1", img: "https://ia802505.us.archive.org/28/items/TheAscentOfMan/TheAscentOfMan.png", src: "https://archive.org/download/TheAscentOfMan/TheAscentOfManE01.mp4", voice: "Jacob Bronowski explora el desarrollo humano desde las cavernas.", lang: "en" },
+      { id: 27, title: "Civilisation EP1", img: "https://ia802602.us.archive.org/19/items/Civilisation/Civilisation.png", src: "https://archive.org/download/Civilisation/CivilisationE01.mp4", voice: "Kenneth Clark presenta el renacimiento de la cultura occidental.", lang: "en" },
+      { id: 28, title: "The World at War EP1", img: "https://ia802700.us.archive.org/35/items/TheWorldAtWar/TheWorldAtWar.png", src: "https://archive.org/download/TheWorldAtWar/TheWorldAtWarE01.mp4", voice: "Documental definitivo sobre la Segunda Guerra Mundial.", lang: "en" },
+      { id: 29, title: "Life on Earth EP1", img: "https://ia801300.us.archive.org/3/items/LifeOnEarth/LifeOnEarth.png", src: "https://archive.org/download/LifeOnEarth/LifeOnEarthE01.mp4", voice: "David Attenborough muestra el origen de la vida en la Tierra.", lang: "en" },
+      { id: 30, title: "The Blue Planet EP1", img: "https://ia801300.us.archive.org/3/items/TheBluePlanet/TheBluePlanet.png", src: "https://archive.org/download/TheBluePlanet/TheBluePlanetE01.mp4", voice: "Maravillas de los océanos, desde la superficie hasta las profundidades.", lang: "en" },
+      { id: 31, title: "Walking with Dinosaurs EP1", img: "https://ia801300.us.archive.org/3/items/WalkingWithDinosaurs/WalkingWithDinosaurs.png", src: "https://archive.org/download/WalkingWithDinosaurs/WalkingWithDinosaursE01.mp4", voice: "Dinosaurios cobran vida con efectos realistas.", lang: "en" },
+      { id: 32, title: "Eyes on the Prize EP1", img: "https://ia801500.us.archive.org/19/items/EyesOnThePrize/EyesOnThePrize.png", src: "https://archive.org/download/EyesOnThePrize/EyesOnThePrizeE01.mp4", voice: "Historia del movimiento por los derechos civiles en EE.UU.", lang: "en" },
+      { id: 33, title: "The Vietnam War EP1", img: "https://ia801500.us.archive.org/20/items/TheVietnamWar/TheVietnamWar.png", src: "https://archive.org/download/TheVietnamWar/TheVietnamWarE01.mp4", voice: "Análisis profundo de la guerra de Vietnam desde múltiples perspectivas.", lang: "en" },
+      { id: 34, title: "The Civil War EP1", img: "https://ia801500.us.archive.org/21/items/TheCivilWar/TheCivilWar.png", src: "https://archive.org/download/TheCivilWar/TheCivilWarE01.mp4", voice: "Ken Burns narra la guerra civil estadounidense con fotos y cartas.", lang: "en" },
+      { id: 35, title: "The Men Who Built America EP1", img: "https://ia801500.us.archive.org/22/items/TheMenWhoBuiltAmerica/TheMenWhoBuiltAmerica.png", src: "https://archive.org/download/TheMenWhoBuiltAmerica/TheMenWhoBuiltAmericaE01.mp4", voice: "Historia de Rockefeller, Carnegie, Ford y otros magnates.", lang: "en" },
+      { id: 36, title: "Apocalypse WWI EP1", img: "https://ia801500.us.archive.org/23/items/ApocalypseWWI/ApocalypseWWI.png", src: "https://archive.org/download/ApocalypseWWI/ApocalypseWWIE01.mp4", voice: "Primera Guerra Mundial contada con imágenes coloreadas.", lang: "fr" },
+      { id: 37, title: "Secrets of the Dead S01E01", img: "https://ia801500.us.archive.org/24/items/SecretsOfTheDead/SecretsOfTheDead.png", src: "https://archive.org/download/SecretsOfTheDead/SecretsOfTheDeadS01E01.mp4", voice: "Investigación forense de misterios históricos.", lang: "en" },
+      { id: 38, title: "NOVA S01E01", img: "https://ia801500.us.archive.org/25/items/NOVA/NOVA.png", src: "https://archive.org/download/NOVA/NOVAS01E01.mp4", voice: "Ciencia y tecnología explicadas para todos.", lang: "en" },
+      { id: 39, title: "Horizon S01E01", img: "https://ia801500.us.archive.org/26/items/Horizon/Horizon.png", src: "https://archive.org/download/Horizon/HorizonS01E01.mp4", voice: "Programa británico de divulgación científica.", lang: "en" },
+      { id: 40, title: "The Story of Maths EP1", img: "https://ia801500.us.archive.org/27/items/TheStoryOfMaths/TheStoryOfMaths.png", src: "https://archive.org/download/TheStoryOfMaths/TheStoryOfMathsE01.mp4", voice: "Historia de las matemáticas desde Egipto hasta hoy.", lang: "en" }
+    ];
+
+    const animaciones = [
+      { id: 41, title: "Big Buck Bunny", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Big_Buck_Bunny_logo.svg/640px-Big_Buck_Bunny_logo.svg.png", src: "https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4", voice: "Una liebre defiende el bosque de unos bandidos animales.", lang: "en" },
+      { id: 42, title: "Sintel", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Sintel_movie_logo.png/640px-Sintel_movie_logo.png", src: "https://download.blender.org/peach/sintel_movies/Sintel_320x180.mp4", voice: "Una joven guerrera busca a un dragón que conoció de niña.", lang: "en" },
+      { id: 43, title: "Cosmos Laundromat", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Cosmos_Laundromat_poster.png/640px-Cosmos_Laundromat_poster.png", src: "https://download.blender.org/demo/movies/Cosmos_Laundromat_320x180.mp4", voice: "Un hombre deprimido encuentra una lavandería mágica.", lang: "en" },
+      { id: 44, title: "Tears of Steel", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Tears_of_Steel_poster.png/640px-Tears_of_Steel_poster.png", src: "https://download.blender.org/peach/tearsofsteel_movies/TearsOfSteel_320x180.mp4", voice: "Mujeres guerreras luchan contra robots en un futuro distópico.", lang: "en" },
+      { id: 45, title: "Spring", img: "https://cloud.blender.org/p/gallery/5d14c8d28f55a9379c9e4c0d/5d14c8d28f55a9379c9e4c0e/splash.png", src: "https://download.blender.org/demo/movies/Spring_320x180.mp4", voice: "Criatura mágica protege un bosque encantado.", lang: "en" },
+      { id: 46, title: "Agent 327", img: "https://cloud.blender.org/p/characters/59ee33268f55a957719f4d9d/splash.png", src: "https://download.blender.org/demo/movies/Agent327_320x180.mp4", voice: "Agente secreto holandés en una misión absurda.", lang: "nl" },
+      { id: 47, title: "Hero", img: "https://cloud.blender.org/p/gallery/5c37a7b88f55a911698b4567/5c37a7b88f55a911698b4568/splash.png", src: "https://download.blender.org/demo/movies/Hero_320x180.mp4", voice: "Un perro héroe salva a su dueño de un incendio.", lang: "en" },
+      { id: 48, title: "Caminandes", img: "https://cloud.blender.org/p/gallery/54d7a4d08f55a97a229b4567/splash.png", src: "https://download.blender.org/demo/movies/Caminandes_320x180.mp4", voice: "Llama torpe intenta cruzar los Andes.", lang: "es" },
+      { id: 49, title: "Glass Half", img: "https://download.blender.org/peach/tearsofsteel/stills/glass_half.jpg", src: "https://download.blender.org/demo/movies/GlassHalf_320x180.mp4", voice: "Reflexión filosófica sobre ver el vaso medio lleno o vacío.", lang: "en" },
+      { id: 50, title: "RUBBER", img: "https://download.blender.org/peach/tearsofsteel/stills/rubber.jpg", src: "https://download.blender.org/demo/movies/Rubber_320x180.mp4", voice: "Experimento visual con texturas y materiales elásticos.", lang: "en" },
+      { id: 51, title: "Chaos", img: "https://cloud.blender.org/p/gallery/54d7a4d08f55a97a229b4567/54d7a4d08f55a97a229b4568/splash.png", src: "https://download.blender.org/demo/movies/Chaos_320x180.mp4", voice: "Simulación de caos y física en entornos complejos.", lang: "en" },
+      { id: 52, title: "Wing It", img: "https://cloud.blender.org/p/gallery/54d7a4d08f55a97a229b4567/54d7a4d08f55a97a229b4569/splash.png", src: "https://download.blender.org/demo/movies/WingIt_320x180.mp4", voice: "Pájaro intenta volar con alas hechas de objetos cotidianos.", lang: "en" },
+      { id: 53, title: "Bolt", img: "https://cloud.blender.org/p/gallery/54d7a4d08f55a97a229b4567/54d7a4d08f55a97a229b456a/splash.png", src: "https://download.blender.org/demo/movies/Bolt_320x180.mp4", voice: "Perro superhéroe descubre que sus poderes no son reales.", lang: "en" },
+      { id: 54, title: "Caminandes 2", img: "https://cloud.blender.org/p/gallery/54d7a4d08f55a97a229b4567/54d7a4d08f55a97a229b456b/splash.png", src: "https://download.blender.org/demo/movies/Caminandes2_320x180.mp4", voice: "La llama sigue sus aventuras en la montaña.", lang: "es" },
+      { id: 55, title: "Caminandes 3", img: "https://cloud.blender.org/p/gallery/54d7a4d08f55a97a229b4567/54d7a4d08f55a97a229b456c/splash.png", src: "https://download.blender.org/demo/movies/Caminandes3_320x180.mp4", voice: "¡La llama encuentra un tesoro andino!", lang: "es" },
+      { id: 56, title: "Cosmos Laundromat: First Cycle", img: "https://cloud.blender.org/p/gallery/5d14c8d28f55a9379c9e4c0d/5d14c8d28f55a9379c9e4c0f/splash.png", src: "https://download.blender.org/demo/movies/CosmosLaundromatFirstCycle_320x180.mp4", voice: "Versión extendida de la lavandería mágica.", lang: "en" },
+      { id: 57, title: "Durian Reel 1", img: "https://cloud.blender.org/p/gallery/5d14c8d28f55a9379c9e4c0d/5d14c8d28f55a9379c9e4c10/splash.png", src: "https://download.blender.org/demo/movies/DurianReel1_320x180.mp4", voice: "Pruebas técnicas del proyecto Durian de Blender.", lang: "en" },
+      { id: 58, title: "Sintel Reel", img: "https://cloud.blender.org/p/gallery/5d14c8d28f55a9379c9e4c0d/5d14c8d28f55a9379c9e4c11/splash.png", src: "https://download.blender.org/demo/movies/SintelReel_320x180.mp4", voice: "Escenas adicionales y pruebas de Sintel.", lang: "en" },
+      { id: 59, title: "Big Buck Bunny Reel", img: "https://cloud.blender.org/p/gallery/5d14c8d28f55a9379c9e4c0d/5d14c8d28f55a9379c9e4c12/splash.png", src: "https://download.blender.org/demo/movies/BigBuckBunnyReel_320x180.mp4", voice: "Escenas extendidas y divertidas de Big Buck Bunny.", lang: "en" },
+      { id: 60, title: "Tears of Steel Reel", img: "https://cloud.blender.org/p/gallery/5d14c8d28f55a9379c9e4c0d/5d14c8d28f55a9379c9e4c13/splash.png", src: "https://download.blender.org/demo/movies/TearsOfSteelReel_320x180.mp4", voice: "Detrás de cámaras y escenas adicionales de Tears of Steel.", lang: "en" }
+    ];
+
+    // 🧠 ESTADO DE LA APP
+    let favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+    let historial = JSON.parse(localStorage.getItem('historial')) || [];
+    let descargadas = JSON.parse(localStorage.getItem('descargadas')) || [];
+    let progreso = JSON.parse(localStorage.getItem('progreso')) || {};
+    let currentVideo = null;
+    let audioDescriptivoActivo = false;
+    let traduccionActiva = false;
+    let velocidad = 1.0;
+    let calidad = '720p';
+    let sintesisVoz = window.speechSynthesis;
+
+    // 🎥 FUNCIONES PRINCIPALES
+    function renderContent() {
+      document.getElementById('loading').style.display = 'none';
+      
+      renderGrid(peliculas, 'peliculasGrid');
+      renderGrid(series, 'seriesGrid');
+      renderGrid(animaciones, 'animacionesGrid');
+      renderFavoritos();
+      renderHistorial();
+      renderDescargadas();
+    }
+
+    function renderGrid(items, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      
+      if (items.length === 0) {
+        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:20px; color:#777">Contenido no disponible</p>';
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const progress = progreso[item.id] || 0;
+        
+        card.innerHTML = `
+          <button class="favorite-btn ${favoritos.includes(item.id) ? 'favorited' : ''}" data-id="${item.id}" data-title="${item.title}">★</button>
+          ${historial.includes(item.id) ? `<button class="continue-btn" data-id="${item.id}">▶</button>` : ''}
+          <button class="voice-btn" data-id="${item.id}" title="Narración por voz">🗣️</button>
+          <button class="translate-btn" data-id="${item.id}" title="Traducir">🌍</button>
+          ${progress > 0 ? `<div class="progress-bar" style="width: ${progress}%"></div>` : ''}
+          <img src="${item.img}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/300x450/333/ff4dff?text=Sin+Portada'"/>
+          <div class="card-title">${item.title}</div>
+        `;
+
+        card.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('favorite-btn') && 
+              !e.target.classList.contains('voice-btn') && 
+              !e.target.classList.contains('translate-btn') &&
+              !e.target.classList.contains('continue-btn')) {
+            openVideo(item);
+          }
+        });
+
+        container.appendChild(card);
+      });
+
+      // Eventos
+      document.querySelectorAll('.favorite-btn').forEach(btn => {
+        btn.addEventListener('click', toggleFavorite);
+      });
+      
+      document.querySelectorAll('.voice-btn').forEach(btn => {
+        btn.addEventListener('click', activarVoz);
+      });
+      
+      document.querySelectorAll('.translate-btn').forEach(btn => {
+        btn.addEventListener('click', abrirTraductor);
+      });
+      
+      document.querySelectorAll('.continue-btn').forEach(btn => {
+        btn.addEventListener('click', continuarViendo);
+      });
+    }
+
+    function renderFavoritos() {
+      const favoritosGrid = document.getElementById('favoritosGrid');
+      const allItems = [...peliculas, ...series, ...animaciones];
+      const favoritosItems = allItems.filter(item => favoritos.includes(item.id));
+      
+      if (favoritosItems.length === 0) {
+        favoritosGrid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:#777">Guarda tus favoritos pulsando ★</p>';
+      } else {
+        renderGrid(favoritosItems, 'favoritosGrid');
+      }
+    }
+
+    function renderHistorial() {
+      const historialGrid = document.getElementById('historialGrid');
+      const allItems = [...peliculas, ...series, ...animaciones];
+      const historialItems = allItems.filter(item => historial.includes(item.id));
+      
+      if (historialItems.length === 0) {
+        historialGrid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:#777">Tu historial aparecerá aquí</p>';
+      } else {
+        renderGrid(historialItems, 'historialGrid');
+      }
+    }
+
+    function renderDescargadas() {
+      const descargadasGrid = document.getElementById('descargadasGrid');
+      const allItems = [...peliculas, ...series, ...animaciones];
+      const descargadasItems = allItems.filter(item => descargadas.includes(item.id));
+      
+      if (descargadasItems.length === 0) {
+        descargadasGrid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:#777">Guarda contenido para ver sin internet</p>';
+      } else {
+        renderGrid(descargadasItems, 'descargadasGrid');
+      }
+    }
+
+    function toggleFavorite(e) {
+      e.stopPropagation();
+      const id = parseInt(e.target.getAttribute('data-id'));
+      const title = e.target.getAttribute('data-title');
+      const index = favoritos.indexOf(id);
+
+      if (index > -1) {
+        favoritos.splice(index, 1);
+        e.target.classList.remove('favorited');
+        showToast(`❌ ${title} eliminado de favoritos`);
+      } else {
+        favoritos.push(id);
+        e.target.classList.add('favorited');
+        showToast(`✅ ${title} añadido a favoritos`);
+      }
+
+      localStorage.setItem('favoritos', JSON.stringify(favoritos));
+      renderFavoritos();
+    }
+
+    function activarVoz(e) {
+      e.stopPropagation();
+      const id = parseInt(e.target.getAttribute('data-id'));
+      const allItems = [...peliculas, ...series, ...animaciones];
+      const item = allItems.find(i => i.id === id);
+      
+      if (item && item.voice) {
+        if (sintesisVoz) {
+          // Cancelar voz anterior
+          sintesisVoz.cancel();
+          
+          const utterance = new SpeechSynthesisUtterance(item.voice);
+          utterance.lang = item.lang === 'es' ? 'es-ES' : 
+                          item.lang === 'fr' ? 'fr-FR' :
+                          item.lang === 'de' ? 'de-DE' :
+                          item.lang === 'pt' ? 'pt-BR' :
+                          item.lang === 'it' ? 'it-IT' :
+                          item.lang === 'zh' ? 'zh-CN' :
+                          item.lang === 'ar' ? 'ar-SA' :
+                          item.lang === 'ru' ? 'ru-RU' :
+                          item.lang === 'ja' ? 'ja-JP' :
+                          item.lang === 'nl' ? 'nl-NL' : 'en-US';
+          
+          sintesisVoz.speak(utterance);
+          showToast(`🗣️ Reproduciendo descripción de: ${item.title}`);
+        } else {
+          showToast("Tu navegador no soporta síntesis de voz");
+        }
+      }
+    }
+
+    function abrirTraductor(e) {
+      e.stopPropagation();
+      const id = parseInt(e.target.getAttribute('data-id'));
+      currentVideo = [...peliculas, ...series, ...animaciones].find(i => i.id === id);
+      document.getElementById('translateModal').classList.add('active');
+    }
+
+    function continuarViendo(e) {
+      e.stopPropagation();
+      const id = parseInt(e.target.getAttribute('data-id'));
+      const item = [...peliculas, ...series, ...animaciones].find(i => i.id === id);
+      if (item) {
+        openVideo(item);
+        const videoPlayer = document.getElementById('videoPlayer');
+        videoPlayer.currentTime = (progreso[item.id] / 100) * videoPlayer.duration;
+      }
+    }
+
+    function openVideo(item) {
+      const videoPlayer = document.getElementById('videoPlayer');
+      const videoTitle = document.getElementById('videoTitle');
+      
+      videoPlayer.src = item.src;
+      videoTitle.textContent = item.title;
+      currentVideo = item;
+      
+      // Agregar al historial
+      if (!historial.includes(item.id)) {
+        historial.push(item.id);
+        localStorage.setItem('historial', JSON.stringify(historial));
+      }
+      
+      videoPlayer.load();
+      document.body.classList.add('video-playing');
+      document.getElementById('videoModal').classList.add('active');
+      
+      setTimeout(() => {
+        videoPlayer.play().catch(e => {
+          console.warn("Reproducción no iniciada automáticamente:", e);
+          showToast("Toca la pantalla para reproducir");
+        });
+      }, 100);
+
+      // Guardar progreso
+      videoPlayer.addEventListener('timeupdate', () => {
+        const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+        progreso[item.id] = Math.round(progress);
+        localStorage.setItem('progreso', JSON.stringify(progreso));
+      });
+    }
+
+    function closeVideo() {
+      const videoPlayer = document.getElementById('videoPlayer');
+      videoPlayer.pause();
+      videoPlayer.currentTime = 0;
+      document.getElementById('videoModal').classList.remove('active');
+      document.body.classList.remove('video-playing');
+      document.getElementById('audioDescriptivo').classList.remove('active');
+      audioDescriptivoActivo = false;
+    }
+
+    // 🌐 TRADUCTOR SIMULADO
+    document.getElementById('applyTranslate').addEventListener('click', () => {
+      const fromLang = document.getElementById('fromLang').value;
+      const toLang = document.getElementById('toLang').value;
+      
+      if (currentVideo) {
+        const textoOriginal = currentVideo.voice || "Contenido sin descripción disponible.";
+        // Simulamos traducción (en una app real usarías API como Google Translate)
+        let textoTraducido = textoOriginal;
+        
+        if (toLang !== currentVideo.lang) {
+          // Simulación básica de traducción
+          const traducciones = {
+            en: { es: "Translated to Spanish", fr: "Traduit en français", de: "Ins Deutsche übersetzt" },
+            es: { en: "Traducido al inglés", fr: "Traduit en français", de: "Ins Deutsche übersetzt" },
+            fr: { en: "Traduit en anglais", es: "Traducido al español", de: "Ins Deutsche übersetzt" },
+            de: { en: "Ins Englische übersetzt", es: "Traducido al español", fr: "Traduit en français" }
+          };
+          
+          if (traducciones[currentVideo.lang] && traducciones[currentVideo.lang][toLang]) {
+            textoTraducido = `[${toLang.toUpperCase()}] ${traducciones[currentVideo.lang][toLang]}`;
+          } else {
+            textoTraducido = `[${toLang.toUpperCase()}] Traducción simulada del contenido: ${textoOriginal.substring(0, 50)}...`;
+          }
+        }
+        
+        showToast(`🌍 Traducido a ${toLang}: ${textoTraducido}`);
+        traduccionActiva = true;
+        
+        // Activar audio descriptivo con la traducción
+        const utterance = new SpeechSynthesisUtterance(textoTraducido);
+        utterance.lang = toLang === 'es' ? 'es-ES' : 
+                        toLang === 'fr' ? 'fr-FR' :
+                        toLang === 'de' ? 'de-DE' :
+                        toLang === 'pt' ? 'pt-BR' :
+                        toLang === 'it' ? 'it-IT' :
+                        toLang === 'zh' ? 'zh-CN' :
+                        toLang === 'ar' ? 'ar-SA' :
+                        toLang === 'ru' ? 'ru-RU' :
+                        toLang === 'ja' ? 'ja-JP' : 'en-US';
+        
+        sintesisVoz.speak(utterance);
+      }
+      
+      document.getElementById('translateModal').classList.remove('active');
+    });
+
+    document.getElementById('closeTranslate').addEventListener('click', () => {
+      document.getElementById('translateModal').classList.remove('active');
+    });
+
+    // 🎚️ CONTROLES DE VIDEO
+    document.getElementById('speedBtn').addEventListener('click', () => {
+      const speeds = [0.5, 1.0, 1.5, 2.0];
+      const currentIndex = speeds.indexOf(velocidad);
+      velocidad = speeds[(currentIndex + 1) % speeds.length];
+      document.getElementById('videoPlayer').playbackRate = velocidad;
+      document.getElementById('speedBtn').textContent = `${velocidad}x`;
+      showToast(`Velocidad: ${velocidad}x`);
+    });
+
+    document.getElementById('qualityBtn').addEventListener('click', () => {
+      const qualities = ['360p', '480p', '720p'];
+      const currentIndex = qualities.indexOf(calidad);
+      calidad = qualities[(currentIndex + 1) % qualities.length];
+      document.getElementById('qualityBtn').textContent = calidad;
+      showToast(`Calidad: ${calidad} - Simulada (la fuente es fija)`);
+    });
+
+    document.getElementById('audioDescBtn').addEventListener('click', () => {
+      audioDescriptivoActivo = !audioDescriptivoActivo;
+      document.getElementById('audioDescBtn').classList.toggle('active', audioDescriptivoActivo);
+      
+      if (audioDescriptivoActivo && currentVideo && currentVideo.voice) {
+        const audioDescriptivo = document.getElementById('audioDescriptivo');
+        audioDescriptivo.textContent = currentVideo.voice;
+        audioDescriptivo.classList.add('active');
+        
+        const utterance = new SpeechSynthesisUtterance(currentVideo.voice);
+        utterance.lang = currentVideo.lang === 'es' ? 'es-ES' : 'en-US';
+        sintesisVoz.speak(utterance);
+        
+        showToast("Audio descriptivo activado para personas con discapacidad visual");
+      } else {
+        document.getElementById('audioDescriptivo').classList.remove('active');
+        sintesisVoz.cancel();
+        showToast("Audio descriptivo desactivado");
+      }
+    });
+
+    document.getElementById('subtitleBtn').addEventListener('click', () => {
+      showToast("Subtítulos automáticos activados (simulados)");
+      // En una app real, aquí cargarías un archivo .vtt o usarías WebVTT
+    });
+
+    document.getElementById('translateVideoBtn').addEventListener('click', () => {
+      if (currentVideo) {
+        document.getElementById('translateModal').classList.add('active');
+      }
+    });
+
+    // 🍞 TOAST
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.opacity = "1";
+      setTimeout(() => { toast.style.opacity = "0"; }, 3000);
+    }
+
+    // 🍔 MENÚ HAMBURGUESA
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('overlay').classList.toggle('active');
+    });
+
+    document.getElementById('overlay').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    });
+
+    // 🔗 NAVEGACIÓN SUAVE
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        const targetId = this.getAttribute('href').substring(1);
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // ❌ CERRAR VIDEO
+    document.getElementById('closeVideoBtn').addEventListener('click', closeVideo);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('video-playing')) {
+        closeVideo();
+      }
+    });
+
+    // ⬆️ SCROLL TOP
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
+    window.addEventListener('scroll', () => {
+      scrollTopBtn.classList.toggle('show', window.scrollY > 300);
+    });
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // 🔍 BÚSQUEDA
+    document.getElementById('searchBar').addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      const allItems = [...peliculas, ...series, ...animaciones];
+      const filtered = allItems.filter(item => item.title.toLowerCase().includes(term));
+      
+      // Mostrar solo resultados
+      document.getElementById('peliculasGrid').innerHTML = '';
+      document.getElementById('seriesGrid').innerHTML = '';
+      document.getElementById('animacionesGrid').innerHTML = '';
+      
+      if (term === '') {
+        renderContent();
+      } else {
+        const container = document.createElement('div');
+        container.className = 'content-grid';
+        filtered.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          const progress = progreso[item.id] || 0;
+          
+          card.innerHTML = `
+            <button class="favorite-btn ${favoritos.includes(item.id) ? 'favorited' : ''}" data-id="${item.id}" data-title="${item.title}">★</button>
+            ${historial.includes(item.id) ? `<button class="continue-btn" data-id="${item.id}">▶</button>` : ''}
+            <button class="voice-btn" data-id="${item.id}">🗣️</button>
+            <button class="translate-btn" data-id="${item.id}">🌍</button>
+            ${progress > 0 ? `<div class="progress-bar" style="width: ${progress}%"></div>` : ''}
+            <img src="${item.img}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/300x450/333/ff4dff?text=Sin+Portada'"/>
+            <div class="card-title">${item.title}</div>
+          `;
+
+          card.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('favorite-btn') && 
+                !e.target.classList.contains('voice-btn') && 
+                !e.target.classList.contains('translate-btn') &&
+                !e.target.classList.contains('continue-btn')) {
+              openVideo(item);
+            }
+          });
+
+          container.appendChild(card);
+        });
+        
+        document.getElementById('peliculasGrid').parentElement.insertAdjacentElement('afterend', container);
+        document.getElementById('peliculasGrid').parentElement.style.display = 'none';
+        document.getElementById('seriesGrid').parentElement.style.display = 'none';
+        document.getElementById('animacionesGrid').parentElement.style.display = 'none';
+      }
+    });
+
+    // 🎚️ FILTROS
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const filter = this.getAttribute('data-filter');
+        if (filter === 'all') {
+          document.getElementById('peliculasGrid').parentElement.style.display = 'block';
+          document.getElementById('seriesGrid').parentElement.style.display = 'block';
+          document.getElementById('animacionesGrid').parentElement.style.display = 'block';
+        } else {
+          document.getElementById('peliculasGrid').parentElement.style.display = filter === 'peliculas' ? 'block' : 'none';
+          document.getElementById('seriesGrid').parentElement.style.display = filter === 'series' ? 'block' : 'none';
+          document.getElementById('animacionesGrid').parentElement.style.display = filter === 'animaciones' ? 'block' : 'none';
+        }
+      });
+    });
+
+    // ▶️ INICIAR
+    document.addEventListener('DOMContentLoaded', () => {
+      drawLogo();
+      renderContent();
+      
+      // Precarga de imágenes
+      const allImages = [...peliculas, ...series, ...animaciones].map(i => i.img);
+      allImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+    });
+
+    // 🖐️ SOPORTE TÁCTIL AVANZADO PARA MÓVILES
+    let touchStartX = 0, touchStartY = 0;
+    let isSwiping = false;
+    let lastTap = 0;
+
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isSwiping = false;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', e => {
+      const touchEndX = e.touches[0].clientX;
+      const touchEndY = e.touches[0].clientY;
+      const diffX = touchStartX - touchEndX;
+      const diffY = touchStartY - touchEndY;
+
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+        isSwiping = true;
+        if (document.body.classList.contains('video-playing')) {
+          e.preventDefault();
+          if (diffX > 0) {
+            // Swipe izquierda → avanzar 10s
+            const video = document.getElementById('videoPlayer');
+            video.currentTime = Math.min(video.duration, video.currentTime + 10);
+            showToast("⏩ +10 segundos");
+          } else {
+            // Swipe derecha → retroceder 10s
+            const video = document.getElementById('videoPlayer');
+            video.currentTime = Math.max(0, video.currentTime - 10);
+            showToast("⏪ -10 segundos");
+          }
+        }
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchend', e => {
+      if (!isSwiping) {
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const diffX = Math.abs(touchStartX - touchEndX);
+        const diffY = Math.abs(touchStartY - touchEndY);
+
+        if (diffX < 20 && diffY < 20) {
+          // Tap simple
+          const now = new Date().getTime();
+          const timeDiff = now - lastTap;
+          
+          if (timeDiff < 300 && document.body.classList.contains('video-playing')) {
+            // Doble tap → pausar/reproducir
+            const video = document.getElementById('videoPlayer');
+            if (video.paused) {
+              video.play();
+              showToast("▶ Reproduciendo");
+            } else {
+              video.pause();
+              showToast("⏸ Pausado");
+            }
+          }
+          lastTap = now;
+        }
+      }
+    }, { passive: true });
+
+    // Botón de descarga (simulado)
+    document.addEventListener('click', e => {
+      if (e.target.classList.contains('download-btn')) {
+        e.stopPropagation();
+        const id = parseInt(e.target.getAttribute('data-id'));
+        if (!descargadas.includes(id)) {
+          descargadas.push(id);
+          localStorage.setItem('descargadas', JSON.stringify(descargadas));
+          showToast("✅ Contenido guardado para ver offline");
+          renderDescargadas();
+        } else {
+          showToast("⚠️ Ya está descargado");
+        }
+      }
+    });
+  </script>
+</body>
+</html>
